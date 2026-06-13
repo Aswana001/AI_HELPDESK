@@ -149,7 +149,7 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 
 CORS_ALLOWED_ORIGINS = [
-    "https://yourdomain.onrender.com",  # Replace with your actual Render domain
+    "https://ai-helpdesk-6pia.onrender.com",
     "http://localhost:3000",
     "http://localhost:8000",
 ]
