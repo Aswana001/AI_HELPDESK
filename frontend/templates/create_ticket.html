@@ -1,0 +1,83 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Ticket - AI HelpDesk</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <h2>Create Support Ticket</h2>
+
+        <input
+            id="title"
+            placeholder="Ticket Title"
+            type="text">
+
+        <textarea
+            id="description"
+            placeholder="Describe your issue in detail...">
+        </textarea>
+
+        <button class="btn" onclick="createTicket()">
+            Submit Ticket
+        </button>
+
+        <p>
+            <a href="/dashboard/">
+                ← Back to Dashboard
+            </a>
+        </p>
+    </div>
+</div>
+
+<script>
+async function createTicket(){
+    const title = document.getElementById("title").value;
+    const description = document.getElementById("description").value;
+    const token = localStorage.getItem("access");
+
+    if (!title || !description) {
+        alert("Please fill in all fields");
+        return;
+    }
+
+    if (!token) {
+        alert("Please login first");
+        window.location.href = "/";
+        return;
+    }
+
+    const response = await fetch(
+        "/api/tickets/create/",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                title,
+                description
+            })
+        }
+    );
+
+    const data = await response.json();
+
+    if (response.ok) {
+        alert("Ticket Created Successfully");
+        window.location.href = "/dashboard/";
+    } else {
+        alert("Failed to create ticket: " + JSON.stringify(data));
+    }
+}
+</script>
+
+</body>
+</html>

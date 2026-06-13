@@ -1,0 +1,92 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Tickets - AI HelpDesk</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .btn-small {
+            width: auto;
+            padding: 10px 16px;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <div class="dashboard-header">
+            <h2>My Tickets</h2>
+            <a href="/create-ticket/" class="btn btn-small">+ New Ticket</a>
+        </div>
+
+        <div id="tickets"></div>
+    </div>
+</div>
+
+<script>
+async function loadTickets(){
+    const token = localStorage.getItem("access");
+
+    if (!token) {
+        alert("Please login again.");
+        window.location.href = "/";
+        return;
+    }
+
+    const response = await fetch(
+        "/api/tickets/my-tickets/",
+        {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        }
+    );
+
+    const data = await response.json();
+
+    if (!Array.isArray(data)) {
+        document.getElementById("tickets").innerHTML =
+            "<p style='text-align: center;'>Failed to load tickets</p>";
+        return;
+    }
+
+    if (data.length === 0) {
+        document.getElementById("tickets").innerHTML =
+            "<p style='text-align: center;'>No tickets yet. Create one to get started!</p>";
+        return;
+    }
+
+    let html = "";
+
+    data.forEach(ticket => {
+        html += `
+            <div class="ticket-card">
+                <h3>${ticket.title}</h3>
+                <p><strong>Description:</strong><br>${ticket.description}</p>
+                <p><strong>Category:</strong> ${ticket.category}</p>
+                <p><strong>Status:</strong> <span style="color: var(--accent-strong);">${ticket.status}</span></p>
+                <p><strong>AI Suggestion:</strong><br>${ticket.ai_suggestion}</p>
+                <p style="font-size: 0.9em; color: var(--muted);">Created: ${new Date(ticket.created_at).toLocaleDateString()}</p>
+            </div>
+        `;
+    });
+
+    document.getElementById("tickets").innerHTML = html;
+}
+
+loadTickets();
+</script>
+
+</body>
+</html>

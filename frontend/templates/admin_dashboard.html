@@ -1,0 +1,187 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard - AI HelpDesk</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-box {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 16px;
+            padding: 1rem;
+            text-align: center;
+        }
+        .stat-box h4 {
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        .stat-box .number {
+            font-size: 2rem;
+            color: var(--accent-strong);
+            font-weight: 700;
+        }
+        .status-select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 0.5rem;
+            border-radius: 12px;
+        }
+        .btn-update {
+            width: 100%;
+            padding: 10px;
+            margin-top: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <h2>Admin Dashboard</h2>
+
+        <hr>
+
+        <h3>Statistics</h3>
+
+        <div class="stats-grid">
+            <div class="stat-box">
+                <h4>Total Tickets</h4>
+                <div class="number" id="total">0</div>
+            </div>
+            <div class="stat-box">
+                <h4>Open</h4>
+                <div class="number" id="open">0</div>
+            </div>
+            <div class="stat-box">
+                <h4>In Progress</h4>
+                <div class="number" id="progress">0</div>
+            </div>
+            <div class="stat-box">
+                <h4>Resolved</h4>
+                <div class="number" id="resolved">0</div>
+            </div>
+        </div>
+
+        <hr>
+
+        <h3>All Tickets</h3>
+
+        <div id="tickets"></div>
+    </div>
+</div>
+
+<script>
+async function loadDashboard(){
+    const token = localStorage.getItem("access");
+
+    const response = await fetch(
+        "/api/tickets/dashboard/",
+        {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        }
+    );
+
+    const data = await response.json();
+
+    document.getElementById("total").innerText = data.total_tickets;
+    document.getElementById("open").innerText = data.open_tickets;
+    document.getElementById("progress").innerText = data.in_progress_tickets;
+    document.getElementById("resolved").innerText = data.resolved_tickets;
+}
+
+async function loadTickets(){
+    const token = localStorage.getItem("access");
+
+    const response = await fetch(
+        "/api/tickets/all/",
+        {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        }
+    );
+
+    const tickets = await response.json();
+
+    if (tickets.length === 0) {
+        document.getElementById("tickets").innerHTML =
+            "<p style='text-align: center;'>No tickets</p>";
+        return;
+    }
+
+    let html = "";
+
+    tickets.forEach(ticket => {
+        html += `
+            <div class="ticket-card">
+                <h3>${ticket.title}</h3>
+                <p><strong>User:</strong> ${ticket.created_by}</p>
+                <p><strong>Description:</strong><br>${ticket.description}</p>
+                <p><strong>Category:</strong> ${ticket.category}</p>
+                <p><strong>AI Suggestion:</strong><br>${ticket.ai_suggestion}</p>
+                
+                <label style="display: block; margin-top: 1rem; color: var(--muted);">
+                    Update Status:
+                </label>
+                <select id="status-${ticket.id}" class="status-select">
+                    <option value="open" ${ticket.status === 'open' ? 'selected' : ''}>Open</option>
+                    <option value="in_progress" ${ticket.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+                    <option value="resolved" ${ticket.status === 'resolved' ? 'selected' : ''}>Resolved</option>
+                </select>
+
+                <button class="btn btn-update" onclick="updateStatus(${ticket.id})">
+                    Update Status
+                </button>
+            </div>
+        `;
+    });
+
+    document.getElementById("tickets").innerHTML = html;
+}
+
+async function updateStatus(ticketId){
+    const token = localStorage.getItem("access");
+    const status = document.getElementById(`status-${ticketId}`).value;
+
+    const response = await fetch(
+        `/api/tickets/${ticketId}/update-status/`,
+        {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                status
+            })
+        }
+    );
+
+    if (response.ok) {
+        alert("Status Updated Successfully");
+        loadDashboard();
+        loadTickets();
+    } else {
+        alert("Failed to update status");
+    }
+}
+
+loadDashboard();
+loadTickets();
+</script>
+
+</body>
+</html>
